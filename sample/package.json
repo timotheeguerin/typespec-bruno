@@ -6,7 +6,7 @@
     "emit": "tsp compile . && node patch-generated.cjs",
     "build": "tsc -p tsconfig.json --noEmit",
     "start": "node --import tsx server.ts",
-    "test:api": "cd collection && bru run --env-var baseUrl=http://localhost:3000 -r"
+    "test:api": "cd collection && bru run --env Local -r"
   },
   "dependencies": {
     "@typespec/compiler": "catalog:default",
