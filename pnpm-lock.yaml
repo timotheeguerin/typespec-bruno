@@ -113,6 +113,9 @@ importers:
       typespec-opencollection:
         specifier: workspace:*
         version: link:../packages/typespec-opencollection
+      typespec-random-sample:
+        specifier: workspace:*
+        version: link:../packages/typespec-random-sample
     devDependencies:
       '@types/node':
         specifier: catalog:default

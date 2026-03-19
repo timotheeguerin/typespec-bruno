@@ -6,6 +6,7 @@
     "emit": "tsp compile . && node patch-generated.cjs",
     "build": "tsc -p tsconfig.json --noEmit",
     "start": "node --import tsx server.ts",
+    "open:bruno": "open -a Bruno collection",
     "test:api": "cd collection && bru run --env Local -r"
   },
   "dependencies": {
@@ -14,7 +15,8 @@
     "@typespec/openapi": "catalog:default",
     "@typespec/openapi3": "catalog:default",
     "@typespec/http-server-js": "catalog:default",
-    "typespec-opencollection": "workspace:*"
+    "typespec-opencollection": "workspace:*",
+    "typespec-random-sample": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "catalog:default",

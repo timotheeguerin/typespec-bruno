@@ -1,6 +1,9 @@
 emit:
   - "typespec-opencollection"
   - "@typespec/http-server-js"
+linter:
+  extends:
+    - "typespec-opencollection/recommended"
 options: 
   typespec-opencollection:
     emitter-output-dir: "{project-root}/collection"
