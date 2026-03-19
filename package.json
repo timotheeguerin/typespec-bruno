@@ -18,8 +18,8 @@
     "test:watch": "vitest",
     "clean": "rm -rf dist",
     "prepublishOnly": "pnpm build",
-    "sample:emit": "tsp compile sample --trace '*'",
-    "sample:open": "open -a Bruno tsp-output/bruno"
+    "sample:emit": "tsp compile sample",
+    "sample:open": "echo 'In Bruno UI, open collection at: tsp-output/typespec-bruno' && open -a Bruno"
   },
   "keywords": [
     "typespec",
@@ -30,23 +30,27 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@typespec/compiler": ">=1.0.0",
-    "@typespec/http": ">=1.0.0",
-    "@typespec/openapi": ">=1.0.0",
     "@alloy-js/core": ">=0.22.0",
-    "@typespec/emitter-framework": ">=0.17.0"
+    "@typespec/compiler": ">=1.0.0",
+    "@typespec/emitter-framework": ">=0.17.0",
+    "@typespec/http": ">=1.0.0",
+    "@typespec/openapi": ">=1.0.0"
   },
   "devDependencies": {
+    "@alloy-js/core": "^0.22.0",
+    "@types/node": "^25.5.0",
     "@typespec/compiler": "^1.10.0",
+    "@typespec/emitter-framework": "^0.17.0",
     "@typespec/http": "^1.10.0",
     "@typespec/openapi": "^1.10.0",
-    "@typespec/emitter-framework": "^0.17.0",
-    "@alloy-js/core": "^0.22.0",
     "typescript": "~5.8.2",
     "vitest": "^3.0.0"
   },
   "files": [
     "dist/**",
     "!dist/test/**"
-  ]
+  ],
+  "dependencies": {
+    "yaml": "^2.8.2"
+  }
 }

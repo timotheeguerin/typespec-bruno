@@ -21,19 +21,21 @@ import {
 } from "@typespec/http";
 import { Output, SourceFile, SourceDirectory, type Children } from "@alloy-js/core";
 import { writeOutput } from "@typespec/emitter-framework";
+import { resolve as resolveFsPath } from "path";
 import type { BrunoEmitterOptions } from "./lib.js";
 import type {
-  BruFileProps,
-  BruBodyProps,
-  BruAuthProps,
-  BruAuthMode,
-  BruBodyMode,
-  BruParamEntry,
-  BruHeaderEntry,
-  BruHttpVerb,
-} from "./components/index.js";
-import { BruFile } from "./components/BruFile.js";
-import { BruEnvironment } from "./components/BruEnvironment.js";
+  OpenCollectionRequest,
+  OpenCollectionRoot,
+  OpenCollectionEnvironment,
+  FileEntry,
+  HttpConfig,
+  ParamEntry,
+  HeaderEntry,
+  BodyConfig,
+  AuthConfig,
+} from "./types.js";
+import { serializeRequest, serializeRoot, serializeEnvironment } from "./serialize.js";
+import { extractPreservedSections } from "./preserve.js";
 import { kebabCase, convertPath, generateExampleValue } from "./utils.js";
 
 export async function $onEmit(
@@ -52,25 +54,25 @@ export async function $onEmit(
     const service = services.find((s) => s.type === httpService.namespace);
     const serviceName = service?.title ?? httpService.namespace.name;
 
-    const brunoJson = JSON.stringify(
-      { version: "1", name: serviceName, type: "collection" },
-      null,
-      2,
-    ) + "\n";
+    const root: OpenCollectionRoot = {
+      info: { name: serviceName, type: "collection" },
+    };
 
     const fileEntries = buildFileEntries(program, httpService);
     const environments = buildEnvironments(program, httpService.namespace);
 
-    // Build the component tree using JSX
+    // Preserve user-managed sections from existing files
+    await attachPreservedSections(fileEntries, emitterOutputDir);
+
     const tree = (
       <Output>
-        <SourceFile path="bruno.json" filetype="json">
-          {brunoJson}
+        <SourceFile path="opencollection.yml" filetype="yaml">
+          {serializeRoot(root)}
         </SourceFile>
         <SourceDirectory path="environments">
           {environments.map((env) => (
-            <SourceFile path={`${env.name}.bru`} filetype="bru">
-              {BruEnvironment({ variables: env.variables })}
+            <SourceFile path={`${env.name}.yml`} filetype="yaml">
+              {serializeEnvironment(env.data)}
             </SourceFile>
           ))}
         </SourceDirectory>
@@ -82,20 +84,14 @@ export async function $onEmit(
   }
 }
 
-/** A file entry with its relative path segments and component props. */
-interface FileEntry {
-  segments: string[];
-  props: BruFileProps;
-}
+// ── Source tree building ─────────────────────────────────────────────
 
-/** Environment definition. */
-interface EnvironmentDef {
+interface EnvEntry {
   name: string;
-  variables: { key: string; value: string }[];
+  data: OpenCollectionEnvironment;
 }
 
-/** Build the alloy SourceDirectory/SourceFile tree from file entries. */
-function buildSourceTree(entries: FileEntry[]) {
+function buildSourceTree(entries: FileEntry[]): Children[] {
   const folders = new Map<string, FileEntry[]>();
   const rootFiles: FileEntry[] = [];
 
@@ -116,8 +112,8 @@ function buildSourceTree(entries: FileEntry[]) {
 
   for (const entry of rootFiles) {
     result.push(
-      <SourceFile path={entry.segments[0]} filetype="bru">
-        {BruFile(entry.props)}
+      <SourceFile path={entry.segments[0]} filetype="yaml">
+        {serializeRequest(entry.request)}
       </SourceFile>,
     );
   }
@@ -148,8 +144,8 @@ function buildFileEntries(
     const seq = (seqCounters.get(folderKey) ?? 0) + 1;
     seqCounters.set(folderKey, seq);
 
-    const props = buildBruFileProps(program, operation, seq);
-    entries.push({ segments, props });
+    const request = buildRequest(program, operation, seq);
+    entries.push({ segments, request });
   }
 
   return entries;
@@ -170,16 +166,15 @@ function getOperationSegments(
     container = container.namespace as Namespace;
   }
 
-  segments.push(`${kebabCase(operation.operation.name)}.bru`);
+  segments.push(`${kebabCase(operation.operation.name)}.yml`);
   return segments;
 }
 
-function buildBruFileProps(
+function buildRequest(
   program: Program,
   operation: HttpOperation,
   seq: number,
-): BruFileProps {
-  const verb = operation.verb as BruHttpVerb;
+): OpenCollectionRequest {
   const path = convertPath(operation.uriTemplate);
   const url = `{{baseUrl}}${path}`;
 
@@ -199,9 +194,8 @@ function buildBruFileProps(
   }
 
   // Collect parameters
-  const queryParams: BruParamEntry[] = [];
-  const pathParams: BruParamEntry[] = [];
-  const headers: BruHeaderEntry[] = [];
+  const params: ParamEntry[] = [];
+  const headers: HeaderEntry[] = [];
 
   for (const param of operation.parameters.parameters) {
     const exampleValue =
@@ -211,84 +205,80 @@ function buildBruFileProps(
 
     switch (param.type) {
       case "query":
-        queryParams.push({
-          key: param.name,
+        params.push({
+          name: param.name,
           value: exampleValue,
-          enabled: !param.param.optional,
+          type: "query",
+          ...(param.param.optional ? { disabled: true } : {}),
         });
         break;
       case "path":
-        pathParams.push({ key: param.name, value: exampleValue });
+        params.push({ name: param.name, value: exampleValue, type: "path" });
         break;
       case "header":
         headers.push({
-          key: param.name,
+          name: param.name,
           value: exampleValue,
-          enabled: !param.param.optional,
+          ...(param.param.optional ? { disabled: true } : {}),
         });
         break;
     }
   }
 
   // Build body
-  let body: BruBodyProps | undefined;
-  let bodyMode: BruBodyMode = "none";
+  let body: BodyConfig | undefined;
   const opBody = operation.parameters.body;
   if (opBody && opBody.bodyKind === "single") {
     const contentTypes = opBody.contentTypes;
     if (contentTypes.some((ct) => ct.includes("json")) || contentTypes.length === 0) {
-      bodyMode = "json";
       const example = resolveBodyExample(program, operation, opExampleParams, opBody.type);
-      body = { type: "json", content: JSON.stringify(example, null, 2) };
+      body = { type: "json", data: JSON.stringify(example, null, 2) };
     } else if (contentTypes.some((ct) => ct.includes("form-urlencoded"))) {
-      bodyMode = "form-urlencoded";
-      if (opBody.type.kind === "Model") {
-        const example = resolveBodyExample(program, operation, opExampleParams, opBody.type);
-        const fields = objectToFields(example);
-        body = { type: "form-urlencoded", fields };
-      }
+      const example = resolveBodyExample(program, operation, opExampleParams, opBody.type);
+      body = { type: "form-urlencoded", data: objectToFormFields(example) };
     } else if (contentTypes.some((ct) => ct.includes("multipart"))) {
-      bodyMode = "multipart-form";
-      if (opBody.type.kind === "Model") {
-        const example = resolveBodyExample(program, operation, opExampleParams, opBody.type);
-        const fields = objectToFields(example);
-        body = { type: "multipart-form", fields };
-      }
+      const example = resolveBodyExample(program, operation, opExampleParams, opBody.type);
+      body = { type: "multipart-form", data: objectToFormFields(example) };
     } else if (contentTypes.some((ct) => ct.includes("xml"))) {
-      bodyMode = "xml";
+      body = { type: "xml", data: "" };
     } else if (contentTypes.some((ct) => ct.includes("text"))) {
-      bodyMode = "text";
+      body = { type: "text", data: "" };
     }
   }
 
   // Auth
-  const { authMode, auth } = resolveAuth(operation.authentication);
+  const auth = resolveAuth(operation.authentication);
+
+  // HTTP config
+  const http: HttpConfig = {
+    method: operation.verb.toUpperCase(),
+    url,
+  };
+  if (params.length > 0) http.params = params;
+  if (headers.length > 0) http.headers = headers;
+  if (body) http.body = body;
+  if (auth) http.auth = auth;
 
   // Docs
   const doc = getDoc(program, operation.operation);
 
-  const props: BruFileProps = {
-    meta: { name: operation.operation.name, seq },
-    method: { verb, url, body: bodyMode, auth: authMode },
+  const request: OpenCollectionRequest = {
+    info: { name: operation.operation.name, type: "http", seq },
+    http,
   };
 
-  if (queryParams.length > 0) props.queryParams = queryParams;
-  if (pathParams.length > 0) props.pathParams = pathParams;
-  if (headers.length > 0) props.headers = headers;
-  if (body) props.body = body;
-  if (auth) props.auth = auth;
-  if (doc) props.docs = doc;
+  if (doc) request.docs = doc;
 
-  return props;
+  return request;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-function objectToFields(example: unknown): { key: string; value: string }[] {
-  const fields: { key: string; value: string }[] = [];
+function objectToFormFields(example: unknown): { name: string; value: string }[] {
+  const fields: { name: string; value: string }[] = [];
   if (example && typeof example === "object" && !Array.isArray(example)) {
     for (const [key, val] of Object.entries(example as Record<string, unknown>)) {
-      fields.push({ key, value: String(val) });
+      fields.push({ name: key, value: String(val) });
     }
   }
   return fields;
@@ -334,66 +324,73 @@ function resolveBodyExample(
   return generateExampleValue(bodyType);
 }
 
-function resolveAuth(
-  authentication?: Authentication,
-): { authMode: BruAuthMode; auth?: BruAuthProps } {
-  if (!authentication || authentication.options.length === 0) {
-    return { authMode: "none" };
-  }
+function resolveAuth(authentication?: Authentication): AuthConfig | undefined {
+  if (!authentication || authentication.options.length === 0) return undefined;
   const schemes = authentication.options[0].schemes;
-  if (schemes.length === 0) return { authMode: "none" };
+  if (schemes.length === 0) return undefined;
   return mapAuthScheme(schemes[0]);
 }
 
-function mapAuthScheme(
-  scheme: HttpAuth,
-): { authMode: BruAuthMode; auth?: BruAuthProps } {
+function mapAuthScheme(scheme: HttpAuth): AuthConfig | undefined {
   if (scheme.type === "http" && scheme.scheme === "Bearer") {
-    return {
-      authMode: "bearer",
-      auth: { type: "bearer", token: "{{token}}" },
-    };
+    return { type: "bearer", token: "{{token}}" };
   }
   if (scheme.type === "http" && scheme.scheme === "Basic") {
-    return {
-      authMode: "basic",
-      auth: { type: "basic", username: "{{username}}", password: "{{password}}" },
-    };
+    return { type: "basic", username: "{{username}}", password: "{{password}}" };
   }
   if (scheme.type === "apiKey") {
     return {
-      authMode: "apikey",
-      auth: {
-        type: "apikey",
-        key: scheme.name,
-        value: `{{${kebabCase(scheme.name)}}}`,
-        placement: scheme.in === "query" ? "query" : "header",
-      },
+      type: "apikey",
+      key: scheme.name,
+      value: `{{${kebabCase(scheme.name)}}}`,
+      placement: scheme.in === "query" ? "query" : "header",
     };
   }
-  return { authMode: "none" };
+  return undefined;
+}
+
+async function attachPreservedSections(
+  entries: FileEntry[],
+  outputDir: string,
+): Promise<void> {
+  for (const entry of entries) {
+    const filePath = resolveFsPath(outputDir, ...entry.segments);
+    const preserved = await extractPreservedSections(filePath);
+    if (preserved.runtime) entry.request.runtime = preserved.runtime;
+    if (preserved.settings) entry.request.settings = preserved.settings;
+  }
 }
 
 function buildEnvironments(
   program: Program,
   namespace: Namespace,
-): EnvironmentDef[] {
+): EnvEntry[] {
   const servers = getServers(program, namespace);
   if (!servers || servers.length === 0) {
-    return [{ name: "default", variables: [{ key: "baseUrl", value: "http://localhost:3000" }] }];
+    return [{
+      name: "default",
+      data: {
+        info: { name: "Default", type: "env" },
+        vars: { baseUrl: "http://localhost:3000" },
+      },
+    }];
   }
 
   return servers.map((server, index) => {
-    const variables: { key: string; value: string }[] = [
-      { key: "baseUrl", value: server.url },
-    ];
+    const vars: Record<string, string> = { baseUrl: server.url };
     if (server.parameters) {
       for (const [name, param] of server.parameters) {
-        variables.push({ key: name, value: String(generateExampleValue(param.type)) });
+        vars[name] = String(generateExampleValue(param.type));
       }
     }
-    const name =
-      server.description ?? (servers.length === 1 ? "default" : `server-${index + 1}`);
-    return { name: kebabCase(name), variables };
+    const description =
+      server.description ?? (servers.length === 1 ? "Default" : `Server ${index + 1}`);
+    return {
+      name: kebabCase(description),
+      data: {
+        info: { name: description, type: "env" as const },
+        vars,
+      },
+    };
   });
 }

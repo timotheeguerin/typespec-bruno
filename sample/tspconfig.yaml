@@ -1,5 +1,2 @@
 emit:
   - "typespec-bruno"
-options:
-  typespec-bruno:
-    emitter-output-dir: "{output-dir}/bruno"
