@@ -7,6 +7,16 @@ http:
   url: "{{baseUrl}}/owners/:ownerId"
   params:
     - name: ownerId
-      value: "7"
+      value: "1"
       type: path
 docs: Get owner by ID
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"

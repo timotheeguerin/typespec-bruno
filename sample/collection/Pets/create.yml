@@ -13,3 +13,13 @@ http:
         "tag": "golden-retriever"
       }
 docs: Create a new pet
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "201"

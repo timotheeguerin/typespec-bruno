@@ -88,6 +88,30 @@ describe("emitter integration", () => {
     expect(httpServices[0].authentication!.options[0].schemes[0].type).toBe("http");
   });
 
+  it("extracts basic auth", async () => {
+    const { program } = await tester.compile(`
+      @service @useAuth(BasicAuth)
+      namespace Api;
+      @route("/data") @get op getData(): { @body data: string };
+    `);
+    const httpServices = ignoreDiagnostics(getAllHttpServices(program));
+    expect(httpServices[0].authentication).toBeDefined();
+    expect(httpServices[0].authentication!.options[0].schemes[0].type).toBe("http");
+    expect((httpServices[0].authentication!.options[0].schemes[0] as any).scheme).toBe("Basic");
+  });
+
+  it("extracts apikey auth", async () => {
+    const { program } = await tester.compile(`
+      @service @useAuth(ApiKeyAuth<ApiKeyLocation.header, "x-api-key">)
+      namespace Api;
+      @route("/data") @get op getData(): { @body data: string };
+    `);
+    const httpServices = ignoreDiagnostics(getAllHttpServices(program));
+    expect(httpServices[0].authentication).toBeDefined();
+    const scheme = httpServices[0].authentication!.options[0].schemes[0];
+    expect(scheme.type).toBe("apiKey");
+  });
+
   it("generates nested model examples", async () => {
     const { program } = await tester.compile(`
       @service namespace Api;

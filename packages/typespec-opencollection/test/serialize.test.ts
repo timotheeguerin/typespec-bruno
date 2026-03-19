@@ -188,4 +188,118 @@ describe("serializeRequest", () => {
     expect(parsed.http.body.data).toHaveLength(2);
     expect(parsed.http.body.data[0].name).toBe("username");
   });
+
+  it("produces request with apikey auth", () => {
+    const request: OpenCollectionRequest = {
+      info: { name: "ApiKey", type: "http", seq: 1 },
+      http: {
+        method: "GET",
+        url: "{{baseUrl}}/data",
+        auth: { type: "apikey", key: "x-api-key", value: "{{api-key}}", placement: "header" },
+      },
+    };
+    const yaml = serializeRequest(request);
+    const parsed = parse(yaml);
+    expect(parsed.http.auth.type).toBe("apikey");
+    expect(parsed.http.auth.key).toBe("x-api-key");
+    expect(parsed.http.auth.value).toBe("{{api-key}}");
+    expect(parsed.http.auth.placement).toBe("header");
+  });
+
+  it("produces request with default settings", () => {
+    const request: OpenCollectionRequest = {
+      info: { name: "With Settings", type: "http", seq: 1 },
+      http: { method: "GET", url: "{{baseUrl}}/data" },
+      settings: { encodeUrl: true, timeout: 0, followRedirects: true, maxRedirects: 5 },
+    };
+    const yaml = serializeRequest(request);
+    const parsed = parse(yaml);
+    expect(parsed.settings.encodeUrl).toBe(true);
+    expect(parsed.settings.timeout).toBe(0);
+    expect(parsed.settings.followRedirects).toBe(true);
+    expect(parsed.settings.maxRedirects).toBe(5);
+  });
+
+  it("produces request with runtime assertions", () => {
+    const request: OpenCollectionRequest = {
+      info: { name: "Asserted", type: "http", seq: 1 },
+      http: { method: "GET", url: "{{baseUrl}}/data" },
+      runtime: {
+        assertions: [
+          { expression: "res.status", operator: "eq", value: "200" },
+          { expression: "res.body.name", operator: "isString" },
+        ],
+      },
+    };
+    const yaml = serializeRequest(request);
+    const parsed = parse(yaml);
+    expect(parsed.runtime.assertions).toHaveLength(2);
+    expect(parsed.runtime.assertions[0]).toEqual({ expression: "res.status", operator: "eq", value: "200" });
+    expect(parsed.runtime.assertions[1]).toEqual({ expression: "res.body.name", operator: "isString" });
+  });
+
+  it("produces multipart-form body", () => {
+    const request: OpenCollectionRequest = {
+      info: { name: "Upload", type: "http", seq: 1 },
+      http: {
+        method: "POST",
+        url: "{{baseUrl}}/upload",
+        body: {
+          type: "multipart-form",
+          data: [
+            { name: "file", value: "test.txt" },
+            { name: "description", value: "A test file" },
+          ],
+        },
+      },
+    };
+    const yaml = serializeRequest(request);
+    const parsed = parse(yaml);
+    expect(parsed.http.body.type).toBe("multipart-form");
+    expect(parsed.http.body.data).toHaveLength(2);
+  });
+
+  it("produces xml body", () => {
+    const request: OpenCollectionRequest = {
+      info: { name: "XML", type: "http", seq: 1 },
+      http: {
+        method: "POST",
+        url: "{{baseUrl}}/xml",
+        body: { type: "xml", data: "<root><name>test</name></root>" },
+      },
+    };
+    const yaml = serializeRequest(request);
+    const parsed = parse(yaml);
+    expect(parsed.http.body.type).toBe("xml");
+    expect(parsed.http.body.data).toBe("<root><name>test</name></root>");
+  });
+
+  it("produces text body", () => {
+    const request: OpenCollectionRequest = {
+      info: { name: "Text", type: "http", seq: 1 },
+      http: {
+        method: "POST",
+        url: "{{baseUrl}}/text",
+        body: { type: "text", data: "plain text content" },
+      },
+    };
+    const yaml = serializeRequest(request);
+    const parsed = parse(yaml);
+    expect(parsed.http.body.type).toBe("text");
+    expect(parsed.http.body.data).toBe("plain text content");
+  });
+
+  it("produces request with auth inherit", () => {
+    const request: OpenCollectionRequest = {
+      info: { name: "Inherit", type: "http", seq: 1 },
+      http: {
+        method: "GET",
+        url: "{{baseUrl}}/data",
+        auth: "inherit",
+      },
+    };
+    const yaml = serializeRequest(request);
+    const parsed = parse(yaml);
+    expect(parsed.http.auth).toBe("inherit");
+  });
 });

@@ -159,6 +159,13 @@ function buildRequest(
 
   if (doc) request.docs = doc;
 
+  request.settings = {
+    encodeUrl: true,
+    timeout: 0,
+    followRedirects: true,
+    maxRedirects: 5,
+  };
+
   return request;
 }
 

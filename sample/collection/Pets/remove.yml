@@ -7,6 +7,16 @@ http:
   url: "{{baseUrl}}/pets/:petId"
   params:
     - name: petId
-      value: "42"
+      value: "3"
       type: path
 docs: Delete a pet
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "204"

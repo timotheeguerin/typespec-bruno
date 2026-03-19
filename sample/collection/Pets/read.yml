@@ -7,6 +7,16 @@ http:
   url: "{{baseUrl}}/pets/:petId"
   params:
     - name: petId
-      value: "42"
+      value: "1"
       type: path
 docs: Get a pet by ID
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+runtime:
+  assertions:
+    - expression: res.status
+      operator: eq
+      value: "200"
