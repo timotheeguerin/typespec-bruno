@@ -37,5 +37,9 @@
   "files": [
     "dist/**",
     "!dist/test/**"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
 }

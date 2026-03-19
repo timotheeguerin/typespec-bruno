@@ -94,6 +94,9 @@ model Owner {
 @route("/owners")
 interface Owners {
   /** List all pet owners */
+  @opExample(#{
+    returnType: #{owners: #[#{id: 1, name: "Alice", email: "alice@example.com"}]},
+  })
   @get list(): {
     @body owners: Owner[];
   };
