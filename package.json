@@ -1,0 +1,47 @@
+{
+  "name": "typespec-bruno",
+  "packageManager": "pnpm@10.32.1",
+  "version": "0.1.0",
+  "description": "TypeSpec emitter that generates Bruno API collections",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "tspMain": "dist/src/index.js",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "typespec",
+    "emitter",
+    "bruno",
+    "api",
+    "rest"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@typespec/compiler": ">=0.60.0",
+    "@typespec/http": ">=0.60.0",
+    "@typespec/openapi": ">=0.60.0"
+  },
+  "devDependencies": {
+    "@typespec/compiler": "^0.65.0",
+    "@typespec/http": "^0.65.0",
+    "@typespec/openapi": "^0.65.0",
+    "typescript": "~5.6.3",
+    "vitest": "^3.0.0"
+  },
+  "files": [
+    "dist/**",
+    "!dist/test/**"
+  ]
+}
