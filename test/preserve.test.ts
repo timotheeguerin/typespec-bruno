@@ -68,7 +68,89 @@ http:
     );
 
     const sections = await extractPreservedSections(filePath);
-    expect(sections).toEqual({});
+    expect(sections.runtime).toBeUndefined();
+    expect(sections.settings).toBeUndefined();
+    expect(sections.params).toBeUndefined();
+    expect(sections.headers).toBeUndefined();
+    expect(sections.body).toBeUndefined();
+    await rm(testDir, { recursive: true });
+  });
+
+  it("extracts http params from existing file", async () => {
+    await mkdir(testDir, { recursive: true });
+    const filePath = join(testDir, "test-params.yml");
+    await writeFile(
+      filePath,
+      `info:
+  name: List Pets
+  type: http
+  seq: 1
+http:
+  method: GET
+  url: "{{baseUrl}}/pets"
+  params:
+    - name: limit
+      value: "50"
+      type: query
+    - name: petId
+      value: "abc-123"
+      type: path
+`,
+    );
+
+    const sections = await extractPreservedSections(filePath);
+    expect(sections.params).toHaveLength(2);
+    expect(sections.params![0]).toEqual({ name: "limit", value: "50", type: "query" });
+    expect(sections.params![1]).toEqual({ name: "petId", value: "abc-123", type: "path" });
+    await rm(testDir, { recursive: true });
+  });
+
+  it("extracts http headers from existing file", async () => {
+    await mkdir(testDir, { recursive: true });
+    const filePath = join(testDir, "test-headers.yml");
+    await writeFile(
+      filePath,
+      `info:
+  name: Get Data
+  type: http
+  seq: 1
+http:
+  method: GET
+  url: "{{baseUrl}}/data"
+  headers:
+    - name: X-Custom
+      value: my-custom-value
+`,
+    );
+
+    const sections = await extractPreservedSections(filePath);
+    expect(sections.headers).toHaveLength(1);
+    expect(sections.headers![0]).toEqual({ name: "X-Custom", value: "my-custom-value" });
+    await rm(testDir, { recursive: true });
+  });
+
+  it("extracts http body from existing file", async () => {
+    await mkdir(testDir, { recursive: true });
+    const filePath = join(testDir, "test-body.yml");
+    await writeFile(
+      filePath,
+      `info:
+  name: Create Pet
+  type: http
+  seq: 1
+http:
+  method: POST
+  url: "{{baseUrl}}/pets"
+  body:
+    type: json
+    data: '{"name":"Buddy","age":3}'
+`,
+    );
+
+    const sections = await extractPreservedSections(filePath);
+    expect(sections.body).toBeDefined();
+    expect(sections.body!.type).toBe("json");
+    expect(sections.body!.data).toBe('{"name":"Buddy","age":3}');
     await rm(testDir, { recursive: true });
   });
 });

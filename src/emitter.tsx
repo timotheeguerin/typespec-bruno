@@ -35,7 +35,7 @@ import type {
   AuthConfig,
 } from "./types.js";
 import { serializeRequest, serializeRoot, serializeEnvironment } from "./serialize.js";
-import { extractPreservedSections } from "./preserve.js";
+import { extractPreservedSections, type PreservedSections } from "./preserve.js";
 import { kebabCase, convertPath, generateExampleValue } from "./utils.js";
 
 export async function $onEmit(
@@ -61,8 +61,10 @@ export async function $onEmit(
     const fileEntries = buildFileEntries(program, httpService);
     const environments = buildEnvironments(program, httpService.namespace);
 
+    const preserveValues = context.options["preserve-values"] !== false;
+
     // Preserve user-managed sections from existing files
-    await attachPreservedSections(fileEntries, emitterOutputDir);
+    await attachPreservedSections(fileEntries, emitterOutputDir, preserveValues);
 
     const tree = (
       <Output>
@@ -352,12 +354,68 @@ function mapAuthScheme(scheme: HttpAuth): AuthConfig | undefined {
 async function attachPreservedSections(
   entries: FileEntry[],
   outputDir: string,
+  preserveValues: boolean,
 ): Promise<void> {
   for (const entry of entries) {
     const filePath = resolveFsPath(outputDir, ...entry.segments);
     const preserved = await extractPreservedSections(filePath);
     if (preserved.runtime) entry.request.runtime = preserved.runtime;
     if (preserved.settings) entry.request.settings = preserved.settings;
+
+    if (preserveValues) {
+      mergePreservedValues(entry.request, preserved);
+    }
+  }
+}
+
+/** Merge user-edited values from preserved sections into the generated request. */
+function mergePreservedValues(
+  request: OpenCollectionRequest,
+  preserved: PreservedSections,
+): void {
+  if (preserved.params && request.http.params) {
+    mergeParamValues(request.http.params, preserved.params);
+  }
+  if (preserved.headers && request.http.headers) {
+    mergeHeaderValues(request.http.headers, preserved.headers);
+  }
+  if (preserved.body && request.http.body) {
+    mergeBodyData(request.http, preserved.body);
+  }
+}
+
+/** Match params by name+type and copy over user-edited values. */
+function mergeParamValues(
+  generatedParams: ParamEntry[],
+  existingParams: ParamEntry[],
+): void {
+  for (const param of generatedParams) {
+    const match = existingParams.find(
+      (p) => p.name === param.name && p.type === param.type,
+    );
+    if (match) {
+      param.value = match.value;
+    }
+  }
+}
+
+/** Match headers by name and copy over user-edited values. */
+function mergeHeaderValues(
+  generatedHeaders: HeaderEntry[],
+  existingHeaders: HeaderEntry[],
+): void {
+  for (const header of generatedHeaders) {
+    const match = existingHeaders.find((h) => h.name === header.name);
+    if (match) {
+      header.value = match.value;
+    }
+  }
+}
+
+/** Preserve body data when the body type matches. */
+function mergeBodyData(http: HttpConfig, existingBody: BodyConfig): void {
+  if (http.body && http.body.type === existingBody.type) {
+    http.body.data = existingBody.data;
   }
 }
 
