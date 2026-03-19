@@ -1,13 +1,10 @@
 import type {
   Type,
-  Model,
   Scalar,
+  Model,
   Enum,
   Union,
-  ModelProperty,
 } from "@typespec/compiler";
-import type { BruHttpVerb } from "./bru/types.js";
-import type { HttpVerb } from "@typespec/http";
 
 /** Convert a string to kebab-case. */
 export function kebabCase(str: string): string {
@@ -17,21 +14,13 @@ export function kebabCase(str: string): string {
     .toLowerCase();
 }
 
-/** Map TypeSpec HttpVerb to Bruno verb. */
-export function toBruVerb(verb: HttpVerb): BruHttpVerb {
-  return verb as BruHttpVerb;
-}
-
 /**
- * Convert a TypeSpec URI template path to a Bruno URL path.
- * Replaces `{param}` with `:param` and strips query template parts like `{?query}`.
+ * Convert a TypeSpec URI template to a Bruno URL path.
+ * Replaces `{param}` with `:param` and strips query template parts.
  */
 export function convertPath(uriTemplate: string): string {
-  // Remove query template parts: {?foo,bar} or {&foo}
   let path = uriTemplate.replace(/\{[?&][^}]*\}/g, "");
-  // Replace path params: {param} or {+param} → :param
   path = path.replace(/\{[+]?([^}]+)\}/g, ":$1");
-  // Clean trailing slashes that may have been left
   path = path.replace(/\/+$/, "") || "/";
   return path;
 }
@@ -102,14 +91,10 @@ function scalarExample(scalar: Scalar): unknown {
   }
 }
 
-/** Walk up the scalar base chain to find the root scalar name. */
 function getScalarName(scalar: Scalar): string {
   let current: Scalar | undefined = scalar;
   while (current) {
-    if (
-      current.namespace?.name === "TypeSpec" ||
-      !current.baseScalar
-    ) {
+    if (current.namespace?.name === "TypeSpec" || !current.baseScalar) {
       return current.name;
     }
     current = current.baseScalar;
@@ -118,15 +103,9 @@ function getScalarName(scalar: Scalar): string {
 }
 
 function modelExample(model: Model, depth: number): unknown {
-  // Check if it's an array (has an indexer with integer key)
   if (model.indexer) {
     const itemExample = generateExampleValue(model.indexer.value, depth + 1);
     return [itemExample];
-  }
-
-  // Check for Record<T> pattern (string indexer)
-  if (model.indexer && model.properties.size === 0) {
-    return {};
   }
 
   const result: Record<string, unknown> = {};
@@ -145,23 +124,10 @@ function enumExample(enumType: Enum): unknown {
 function unionExample(union: Union, depth: number): unknown {
   const variants = [...union.variants.values()];
   if (variants.length === 0) return {};
-  // Pick the first non-null variant
   for (const variant of variants) {
     if (variant.type.kind !== "Intrinsic") {
       return generateExampleValue(variant.type, depth + 1);
     }
   }
   return generateExampleValue(variants[0].type, depth + 1);
-}
-
-/** Generate example values for each property of a model (for form bodies). */
-export function generateFormFields(
-  model: Model,
-): { key: string; value: string }[] {
-  const fields: { key: string; value: string }[] = [];
-  for (const [name, prop] of model.properties) {
-    const val = generateExampleValue(prop.type);
-    fields.push({ key: name, value: String(val) });
-  }
-  return fields;
 }

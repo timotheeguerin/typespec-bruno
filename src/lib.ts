@@ -1,33 +1,25 @@
 import { createTypeSpecLibrary, type JSONSchemaType } from "@typespec/compiler";
 
 export interface BrunoEmitterOptions {
+  "output-dir"?: string;
 }
 
 const EmitterOptionsSchema: JSONSchemaType<BrunoEmitterOptions> = {
   type: "object",
   additionalProperties: false,
-  properties: {},
+  properties: {
+    "output-dir": {
+      type: "string",
+      nullable: true,
+      description: "Output directory for the Bruno collection",
+    },
+  },
   required: [],
 };
 
 export const $lib = createTypeSpecLibrary({
   name: "typespec-bruno",
-  diagnostics: {
-    "unsupported-auth": {
-      severity: "warning",
-      messages: {
-        default:
-          "Authentication scheme is not supported by Bruno emitter and will be skipped.",
-      },
-    },
-    "unsupported-body": {
-      severity: "warning",
-      messages: {
-        default:
-          "Body type is not supported by Bruno emitter and will be skipped.",
-      },
-    },
-  },
+  diagnostics: {},
   emitter: {
     options: EmitterOptionsSchema,
   },

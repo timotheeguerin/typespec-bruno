@@ -62,9 +62,6 @@ interface Pets {
     parameters: #{
       pet: #{name: "Buddy", tag: "golden-retriever"},
     },
-    returnType: #{
-      pet: #{id: 1, name: "Buddy", tag: "golden-retriever", status: PetStatus.available},
-    },
   })
   @post create(@body pet: PetCreate): {
     @statusCode _: 201;
