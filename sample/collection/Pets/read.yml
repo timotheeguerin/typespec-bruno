@@ -9,7 +9,4 @@ http:
     - name: petId
       value: "42"
       type: path
-  auth:
-    type: bearer
-    token: "{{token}}"
 docs: Get a pet by ID

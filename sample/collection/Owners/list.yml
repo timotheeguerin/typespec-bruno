@@ -5,7 +5,4 @@ info:
 http:
   method: GET
   url: "{{baseUrl}}/owners"
-  auth:
-    type: bearer
-    token: "{{token}}"
 docs: List all pet owners

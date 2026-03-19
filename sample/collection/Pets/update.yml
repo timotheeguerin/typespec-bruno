@@ -16,7 +16,4 @@ http:
         "name": "Buddy Jr.",
         "status": "pending"
       }
-  auth:
-    type: bearer
-    token: "{{token}}"
 docs: Update a pet

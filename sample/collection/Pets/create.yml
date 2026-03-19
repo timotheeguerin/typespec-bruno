@@ -12,7 +12,4 @@ http:
         "name": "Buddy",
         "tag": "golden-retriever"
       }
-  auth:
-    type: bearer
-    token: "{{token}}"
 docs: Create a new pet

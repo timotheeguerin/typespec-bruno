@@ -1,5 +1,9 @@
 emit:
   - "typespec-opencollection"
+  - "@typespec/http-server-js"
 options: 
   typespec-opencollection:
     emitter-output-dir: "{project-root}/collection"
+  "@typespec/http-server-js":
+    emitter-output-dir: "{project-root}/tsp-output"
+    no-format: true

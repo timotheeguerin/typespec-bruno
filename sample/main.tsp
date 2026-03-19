@@ -6,28 +6,19 @@ using TypeSpec.OpenAPI;
 
 /** A sample pet store API */
 @service
-@server("https://petstore.example.com/api/v1", "Production")
-@server("http://localhost:3000/api/v1", "Local development")
-@useAuth(BearerAuth)
+@server("https://petstore.example.com", "Production")
+@server("http://localhost:3000", "Local")
 namespace PetStore;
 
 @example(#{
   id: 1,
   name: "Buddy",
   tag: "golden-retriever",
-  status: PetStatus.available,
 })
 model Pet {
   id: int64;
   name: string;
   tag?: string;
-  status: PetStatus;
-}
-
-enum PetStatus {
-  available,
-  pending,
-  sold,
 }
 
 @example(#{name: "Luna", tag: "tabby"})
@@ -39,7 +30,6 @@ model PetCreate {
 model PetUpdate {
   name?: string;
   tag?: string;
-  status?: PetStatus;
 }
 
 model Error {
@@ -53,7 +43,7 @@ interface Pets {
   @opExample(#{
     parameters: #{limit: 20, offset: 0},
   })
-  @get list(@query limit?: int32, @query offset?: int32, @query status?: PetStatus): {
+  @get list(@query limit?: int32, @query offset?: int32): {
     @body pets: Pet[];
   };
 
@@ -79,7 +69,7 @@ interface Pets {
   @opExample(#{
     parameters: #{
       petId: 42,
-      pet: #{name: "Buddy Jr.", status: PetStatus.pending},
+      pet: #{name: "Buddy Jr."},
     },
   })
   @route("{petId}")

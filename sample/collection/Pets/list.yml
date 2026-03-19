@@ -14,13 +14,6 @@ http:
       value: "0"
       type: query
       disabled: true
-    - name: status
-      value: available
-      type: query
-      disabled: true
-  auth:
-    type: bearer
-    token: "{{token}}"
 docs: List all pets with optional filtering
 settings:
   encodeUrl: true
