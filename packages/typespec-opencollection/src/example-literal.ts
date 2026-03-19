@@ -38,12 +38,13 @@ function escapeString(s: string): string {
 }
 
 /**
- * Generate the full `@opExample(#{ parameters: #{ ... } })` decorator text
- * for an HTTP operation, including all parameters and body.
+ * Generate the full `@opExample(#{ parameters: #{ ... }, returnType: #{ ... } })` decorator text
+ * for an operation, including all parameters, body, and return type.
  */
 export function generateOpExampleDecorator(
   params: { name: string; type: Type }[],
   body?: { name: string; type: Type },
+  returnType?: Type,
 ): string {
   const paramEntries: string[] = [];
 
@@ -57,9 +58,19 @@ export function generateOpExampleDecorator(
     paramEntries.push(`${body.name}: ${toValueLiteral(sample, body.type)}`);
   }
 
-  if (paramEntries.length === 0) {
-    return `@opExample(#{ parameters: #{} })`;
+  const parts: string[] = [];
+  if (paramEntries.length > 0) {
+    parts.push(`parameters: #{${paramEntries.join(", ")}}`);
   }
 
-  return `@opExample(#{ parameters: #{${paramEntries.join(", ")}} })`;
+  if (returnType && returnType.kind !== "Intrinsic") {
+    const sample = generateSample(returnType);
+    parts.push(`returnType: ${toValueLiteral(sample, returnType)}`);
+  }
+
+  if (parts.length === 0) {
+    return `@opExample(#{})`;
+  }
+
+  return `@opExample(#{ ${parts.join(", ")} })`;
 }

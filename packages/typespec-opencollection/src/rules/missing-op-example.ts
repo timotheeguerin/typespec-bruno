@@ -27,7 +27,8 @@ export const missingOpExampleRule = createRule({
           paramInfos.push({ name, type: param.type });
         }
 
-        const decoratorText = generateOpExampleDecorator(paramInfos, undefined);
+        const returnType = op.returnType.kind !== "Intrinsic" ? op.returnType : undefined;
+        const decoratorText = generateOpExampleDecorator(paramInfos, undefined, returnType);
 
         const codefix = defineCodeFix({
           id: "add-op-example",
