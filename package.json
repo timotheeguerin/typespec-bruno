@@ -18,8 +18,7 @@
     "test:watch": "vitest",
     "clean": "rm -rf dist",
     "prepublishOnly": "pnpm build",
-    "sample:emit": "tsp compile sample",
-    "sample:open": "echo 'In Bruno UI, open collection at: tsp-output/typespec-bruno' && open -a Bruno"
+    "sample:emit": "tsp compile sample"
   },
   "keywords": [
     "typespec",

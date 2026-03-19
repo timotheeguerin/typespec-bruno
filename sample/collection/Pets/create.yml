@@ -1,0 +1,18 @@
+info:
+  name: create
+  type: http
+  seq: 2
+http:
+  method: POST
+  url: "{{baseUrl}}/pets"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Buddy",
+        "tag": "golden-retriever"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+docs: Create a new pet

@@ -1,0 +1,15 @@
+info:
+  name: remove
+  type: http
+  seq: 5
+http:
+  method: DELETE
+  url: "{{baseUrl}}/pets/:petId"
+  params:
+    - name: petId
+      value: "42"
+      type: path
+  auth:
+    type: bearer
+    token: "{{token}}"
+docs: Delete a pet

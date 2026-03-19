@@ -1,0 +1,5 @@
+info:
+  name: Production
+  type: env
+vars:
+  baseUrl: https://petstore.example.com/api/v1

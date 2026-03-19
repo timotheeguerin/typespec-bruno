@@ -1,0 +1,22 @@
+info:
+  name: update
+  type: http
+  seq: 4
+http:
+  method: PUT
+  url: "{{baseUrl}}/pets/:petId"
+  params:
+    - name: petId
+      value: "42"
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Buddy Jr.",
+        "status": "pending"
+      }
+  auth:
+    type: bearer
+    token: "{{token}}"
+docs: Update a pet
