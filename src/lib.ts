@@ -1,19 +1,11 @@
 import { createTypeSpecLibrary, type JSONSchemaType } from "@typespec/compiler";
 
-export interface BrunoEmitterOptions {
-  "output-dir"?: string;
-}
+export interface BrunoEmitterOptions {}
 
 const EmitterOptionsSchema: JSONSchemaType<BrunoEmitterOptions> = {
   type: "object",
   additionalProperties: false,
-  properties: {
-    "output-dir": {
-      type: "string",
-      nullable: true,
-      description: "Output directory for the Bruno collection",
-    },
-  },
+  properties: {},
   required: [],
 };
 

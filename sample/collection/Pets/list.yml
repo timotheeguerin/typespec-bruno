@@ -22,3 +22,8 @@ http:
     type: bearer
     token: "{{token}}"
 docs: List all pets with optional filtering
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

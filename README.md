@@ -1,8 +1,10 @@
 # typespec-bruno
 
-A [TypeSpec](https://typespec.io) emitter that generates [Bruno](https://www.usebruno.com/) API collections using the [OpenCollection YAML](https://docs.usebruno.com/opencollection-yaml/overview) format.
+A [TypeSpec](https://typespec.io) emitter that generates [OpenCollection](https://www.opencollection.com/) YAML files — an open specification for defining executable API collections.
 
-Define your API in TypeSpec, then generate a ready-to-use Bruno collection with YAML request files, example bodies, authentication, and environment variables.
+The generated collections can be used with any tool that supports the OpenCollection format, including [Bruno](https://www.usebruno.com/) (v3.0+).
+
+Define your API in TypeSpec, then generate a ready-to-use collection with YAML request files, example bodies, authentication, and environment variables.
 
 ## Installation
 
@@ -50,7 +52,7 @@ tsp-output/typespec-bruno/
     └── read.yml
 ```
 
-Open the output directory in Bruno (v3.0+) to start making API calls.
+Open the output directory in any OpenCollection-compatible client (e.g. Bruno v3.0+) to start making API calls.
 
 ## Features
 
@@ -95,7 +97,7 @@ The emitter uses examples in this priority order:
 
 ### Preservation of User Edits
 
-When re-emitting, the emitter preserves `runtime` and `settings` sections from existing `.yml` files. This means tests, scripts, and assertions added in Bruno survive re-generation:
+When re-emitting, the emitter preserves `runtime` and `settings` sections from existing `.yml` files. This means tests, scripts, and assertions added in your client survive re-generation:
 
 - **Preserved**: `runtime` (scripts, tests, assertions), `settings`
 - **Regenerated**: `info`, `http`, `docs`
