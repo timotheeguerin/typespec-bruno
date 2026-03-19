@@ -11,6 +11,12 @@ using TypeSpec.OpenAPI;
 @useAuth(BearerAuth)
 namespace PetStore;
 
+@example(#{
+  id: 1,
+  name: "Buddy",
+  tag: "golden-retriever",
+  status: PetStatus.available,
+})
 model Pet {
   id: int64;
   name: string;
@@ -24,6 +30,7 @@ enum PetStatus {
   sold,
 }
 
+@example(#{name: "Luna", tag: "tabby"})
 model PetCreate {
   name: string;
   tag?: string;
@@ -43,29 +50,48 @@ model Error {
 @route("/pets")
 interface Pets {
   /** List all pets with optional filtering */
+  @opExample(#{
+    parameters: #{limit: 20, offset: 0},
+  })
   @get list(@query limit?: int32, @query offset?: int32, @query status?: PetStatus): {
     @body pets: Pet[];
   };
 
   /** Create a new pet */
+  @opExample(#{
+    parameters: #{
+      pet: #{name: "Buddy", tag: "golden-retriever"},
+    },
+    returnType: #{
+      pet: #{id: 1, name: "Buddy", tag: "golden-retriever", status: PetStatus.available},
+    },
+  })
   @post create(@body pet: PetCreate): {
     @statusCode _: 201;
     @body pet: Pet;
   };
 
   /** Get a pet by ID */
+  @opExample(#{parameters: #{petId: 42}})
   @route("{petId}")
   @get read(@path petId: int64): {
     @body pet: Pet;
   };
 
   /** Update a pet */
+  @opExample(#{
+    parameters: #{
+      petId: 42,
+      pet: #{name: "Buddy Jr.", status: PetStatus.pending},
+    },
+  })
   @route("{petId}")
   @put update(@path petId: int64, @body pet: PetUpdate): {
     @body pet: Pet;
   };
 
   /** Delete a pet */
+  @opExample(#{parameters: #{petId: 42}})
   @route("{petId}")
   @delete remove(@path petId: int64): {
     @statusCode _: 204;
@@ -86,6 +112,7 @@ interface Owners {
   };
 
   /** Get owner by ID */
+  @opExample(#{parameters: #{ownerId: 7}})
   @route("{ownerId}")
   @get read(@path ownerId: int64): {
     @body owner: Owner;

@@ -3,8 +3,13 @@ import {
   type Program,
   type Namespace,
   type Interface,
+  type Value,
+  type Type,
   listServices,
   getDoc,
+  getExamples,
+  getOpExamples,
+  serializeValueAsJson,
   ignoreDiagnostics,
 } from "@typespec/compiler";
 import {
@@ -148,15 +153,33 @@ function buildBruFile(
   const path = convertPath(operation.uriTemplate);
   const url = `{{baseUrl}}${path}`;
 
+  // Try to get operation-level examples (@opExample)
+  const opExamples = getOpExamples(program, operation.operation);
+  const opExample = opExamples.length > 0 ? opExamples[0] : undefined;
+
+  // Serialize the operation example parameters to get example values for params/body
+  let opExampleParams: Record<string, unknown> | undefined;
+  if (opExample?.parameters) {
+    const serialized = serializeValueAsJson(
+      program,
+      opExample.parameters,
+      operation.operation.parameters,
+    );
+    if (serialized && typeof serialized === "object" && !Array.isArray(serialized)) {
+      opExampleParams = serialized as Record<string, unknown>;
+    }
+  }
+
   // Collect parameters by type
   const queryParams: BruKeyValue[] = [];
   const pathParams: BruKeyValue[] = [];
   const headers: BruKeyValue[] = [];
 
   for (const param of operation.parameters.parameters) {
-    const exampleValue = String(
-      generateExampleValue(param.param.type),
-    );
+    // Use operation example value if available, otherwise fall back to type-based generation
+    const exampleValue = opExampleParams?.[param.param.name] !== undefined
+      ? String(opExampleParams[param.param.name])
+      : String(generateExampleValue(param.param.type));
 
     switch (param.type) {
       case "query":
@@ -194,7 +217,7 @@ function buildBruFile(
       contentTypes.length === 0
     ) {
       bodyMode = "json";
-      const example = generateExampleValue(opBody.type);
+      const example = resolveBodyExample(program, operation, opExampleParams, opBody.type);
       body = {
         type: "json",
         content: JSON.stringify(example, null, 2),
@@ -204,24 +227,24 @@ function buildBruFile(
     ) {
       bodyMode = "form-urlencoded";
       if (opBody.type.kind === "Model") {
+        const example = resolveBodyExample(program, operation, opExampleParams, opBody.type);
         const fields: BruKeyValue[] = [];
-        for (const [name, prop] of opBody.type.properties) {
-          fields.push({
-            key: name,
-            value: String(generateExampleValue(prop.type)),
-          });
+        if (example && typeof example === "object" && !Array.isArray(example)) {
+          for (const [key, val] of Object.entries(example as Record<string, unknown>)) {
+            fields.push({ key, value: String(val) });
+          }
         }
         body = { type: "form-urlencoded", fields };
       }
     } else if (contentTypes.some((ct) => ct.includes("multipart"))) {
       bodyMode = "multipart-form";
       if (opBody.type.kind === "Model") {
+        const example = resolveBodyExample(program, operation, opExampleParams, opBody.type);
         const fields: BruKeyValue[] = [];
-        for (const [name, prop] of opBody.type.properties) {
-          fields.push({
-            key: name,
-            value: String(generateExampleValue(prop.type)),
-          });
+        if (example && typeof example === "object" && !Array.isArray(example)) {
+          for (const [key, val] of Object.entries(example as Record<string, unknown>)) {
+            fields.push({ key, value: String(val) });
+          }
         }
         body = { type: "multipart-form", fields };
       }
@@ -318,6 +341,58 @@ function mapAuthScheme(
 
   // OAuth2 and others — fall back to none
   return { authMode: "none" };
+}
+
+/**
+ * Resolve the best example value for a request body.
+ *
+ * Priority:
+ * 1. @opExample parameters (body param extracted from the operation example)
+ * 2. @example on the body model type
+ * 3. Generated placeholder values from the type structure
+ */
+function resolveBodyExample(
+  program: Program,
+  operation: HttpOperation,
+  opExampleParams: Record<string, unknown> | undefined,
+  bodyType: Type,
+): unknown {
+  // 1. Check @opExample — extract the body parameter value
+  if (opExampleParams) {
+    const bodyParam = operation.parameters.body;
+    if (bodyParam?.property) {
+      // Explicit @body parameter — look up by param name
+      const bodyValue = opExampleParams[bodyParam.property.name];
+      if (bodyValue !== undefined) {
+        return bodyValue;
+      }
+    }
+
+    // Implicit body — the remaining properties that aren't path/query/header
+    // form the body. Check if opExampleParams has properties matching the body model.
+    if (bodyType.kind === "Model") {
+      const bodyObj: Record<string, unknown> = {};
+      let hasAny = false;
+      for (const [propName] of bodyType.properties) {
+        if (opExampleParams[propName] !== undefined) {
+          bodyObj[propName] = opExampleParams[propName];
+          hasAny = true;
+        }
+      }
+      if (hasAny) return bodyObj;
+    }
+  }
+
+  // 2. Check @example on the body model type
+  if (bodyType.kind === "Model" || bodyType.kind === "Scalar" || bodyType.kind === "Enum" || bodyType.kind === "Union") {
+    const examples = getExamples(program, bodyType);
+    if (examples.length > 0) {
+      return serializeValueAsJson(program, examples[0].value, bodyType);
+    }
+  }
+
+  // 3. Fall back to generated placeholder
+  return generateExampleValue(bodyType);
 }
 
 /** Build environment files from @server definitions. */

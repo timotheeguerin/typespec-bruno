@@ -94,27 +94,63 @@ params:path {
 
 ### Request Bodies
 
-TypeSpec models are converted to example JSON bodies with sensible placeholders:
+TypeSpec models are converted to example JSON bodies. The emitter uses examples in this priority order:
+
+1. **`@opExample`** on the operation (highest priority)
+2. **`@example`** on the body model type
+3. **Generated placeholders** from the type structure (fallback)
+
+#### Using `@opExample` (recommended)
 
 ```tsp
 model Pet {
   name: string;
   age: int32;
-  vaccinated: boolean;
+}
+
+@opExample(#{
+  parameters: #{
+    pet: #{name: "Buddy", age: 3}
+  }
+})
+@post op createPet(@body pet: Pet): void;
+```
+
+Generates:
+
+```json
+{
+  "name": "Buddy",
+  "age": 3
+}
+```
+
+#### Using `@example` on models
+
+```tsp
+@example(#{name: "Luna", age: 5})
+model Pet {
+  name: string;
+  age: int32;
 }
 
 @post op createPet(@body pet: Pet): void;
 ```
 
-Generates a `body:json` block with:
+Uses the model example when no `@opExample` is provided.
 
-```json
-{
-  "name": "string",
-  "age": 0,
-  "vaccinated": false
-}
+#### Parameter examples
+
+`@opExample` also populates path and query parameter values:
+
+```tsp
+@opExample(#{parameters: #{petId: 42, verbose: true}})
+@get op getPet(@path petId: int32, @query verbose?: boolean): Pet;
 ```
+
+#### Fallback
+
+Without any examples, placeholder values are generated from types (`string` → `"string"`, `int32` → `0`, `boolean` → `false`, etc.).
 
 ### Authentication
 
@@ -169,6 +205,8 @@ Creates a `Pets/` folder with `list.bru` and `create.bru`.
 | `@query` parameter | `params:query` entry |
 | `@header` parameter | `headers` entry |
 | `@body` model | `body:json` with example values |
+| `@opExample` | Example values for params and body |
+| `@example` on model | Example values for body (fallback) |
 | `@server` | Environment file |
 | `@doc` / doc comment | `docs` block |
 | `@useAuth(BearerAuth)` | `auth:bearer` block |

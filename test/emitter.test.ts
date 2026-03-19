@@ -409,4 +409,172 @@ describe("emitter integration", () => {
     expect(petOps).toHaveLength(2);
     expect(ownerOps).toHaveLength(1);
   });
+
+  it("uses @opExample for body payload", async () => {
+    await runner.compile(`
+      @service
+      namespace Api;
+      using TypeSpec.Http;
+
+      model Pet {
+        name: string;
+        age: int32;
+        vaccinated: boolean;
+      }
+
+      @route("/pets")
+      @opExample(#{
+        parameters: #{
+          pet: #{name: "Buddy", age: 3, vaccinated: true}
+        }
+      })
+      @post op createPet(@body pet: Pet): { @statusCode _: 201 };
+    `);
+
+    const { getOpExamples, serializeValueAsJson } = await import("@typespec/compiler");
+    const httpServices = ignoreDiagnostics(getAllHttpServices(runner.program));
+    const op = httpServices[0].operations[0];
+
+    const opExamples = getOpExamples(runner.program, op.operation);
+    expect(opExamples).toHaveLength(1);
+    expect(opExamples[0].parameters).toBeDefined();
+
+    // Serialize the example parameters
+    const serialized = serializeValueAsJson(
+      runner.program,
+      opExamples[0].parameters!,
+      op.operation.parameters,
+    );
+    expect(serialized).toEqual({
+      pet: { name: "Buddy", age: 3, vaccinated: true },
+    });
+  });
+
+  it("uses @opExample for path and query parameter values", async () => {
+    await runner.compile(`
+      @service
+      namespace Api;
+      using TypeSpec.Http;
+
+      @route("/pets/{petId}")
+      @opExample(#{
+        parameters: #{
+          petId: 42,
+          verbose: true
+        }
+      })
+      @get op getPet(@path petId: int32, @query verbose?: boolean): { @body pet: string };
+    `);
+
+    const { getOpExamples, serializeValueAsJson } = await import("@typespec/compiler");
+    const httpServices = ignoreDiagnostics(getAllHttpServices(runner.program));
+    const op = httpServices[0].operations[0];
+
+    const opExamples = getOpExamples(runner.program, op.operation);
+    const serialized = serializeValueAsJson(
+      runner.program,
+      opExamples[0].parameters!,
+      op.operation.parameters,
+    );
+
+    expect((serialized as any).petId).toBe(42);
+    expect((serialized as any).verbose).toBe(true);
+  });
+
+  it("uses @example on model type for body payload", async () => {
+    await runner.compile(`
+      @service
+      namespace Api;
+      using TypeSpec.Http;
+
+      @example(#{
+        name: "Luna",
+        age: 5,
+      })
+      model Pet {
+        name: string;
+        age: int32;
+      }
+
+      @route("/pets")
+      @post op createPet(@body pet: Pet): { @statusCode _: 201 };
+    `);
+
+    const { getExamples, serializeValueAsJson } = await import("@typespec/compiler");
+    const httpServices = ignoreDiagnostics(getAllHttpServices(runner.program));
+    const op = httpServices[0].operations[0];
+    const bodyType = op.parameters.body!.type;
+
+    const examples = getExamples(runner.program, bodyType as any);
+    expect(examples).toHaveLength(1);
+
+    const serialized = serializeValueAsJson(
+      runner.program,
+      examples[0].value,
+      bodyType,
+    );
+    expect(serialized).toEqual({ name: "Luna", age: 5 });
+  });
+
+  it("prefers @opExample over @example on model", async () => {
+    await runner.compile(`
+      @service
+      namespace Api;
+      using TypeSpec.Http;
+
+      @example(#{
+        name: "Luna",
+        age: 5,
+      })
+      model Pet {
+        name: string;
+        age: int32;
+      }
+
+      @route("/pets")
+      @opExample(#{
+        parameters: #{
+          pet: #{name: "Buddy", age: 3}
+        }
+      })
+      @post op createPet(@body pet: Pet): { @statusCode _: 201 };
+    `);
+
+    const { getOpExamples, serializeValueAsJson } = await import("@typespec/compiler");
+    const httpServices = ignoreDiagnostics(getAllHttpServices(runner.program));
+    const op = httpServices[0].operations[0];
+
+    const opExamples = getOpExamples(runner.program, op.operation);
+    const serialized = serializeValueAsJson(
+      runner.program,
+      opExamples[0].parameters!,
+      op.operation.parameters,
+    );
+
+    // @opExample should take priority — "Buddy" not "Luna"
+    expect((serialized as any).pet.name).toBe("Buddy");
+  });
+
+  it("falls back to generated values when no examples defined", async () => {
+    await runner.compile(`
+      @service
+      namespace Api;
+      using TypeSpec.Http;
+
+      model Pet {
+        name: string;
+        age: int32;
+      }
+
+      @route("/pets")
+      @post op createPet(@body pet: Pet): { @statusCode _: 201 };
+    `);
+
+    const httpServices = ignoreDiagnostics(getAllHttpServices(runner.program));
+    const op = httpServices[0].operations[0];
+    const example = generateExampleValue(op.parameters.body!.type);
+
+    // Falls back to type-based placeholders
+    expect(example).toEqual({ name: "string", age: 0 });
+  });
 });
