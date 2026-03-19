@@ -1,0 +1,41 @@
+{
+  "name": "typespec-random-sample",
+  "version": "0.1.0",
+  "description": "Deterministic sample value generation from TypeSpec types",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "typespec",
+    "sample",
+    "example",
+    "mock"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@typespec/compiler": "catalog:default"
+  },
+  "devDependencies": {
+    "@typespec/compiler": "catalog:default",
+    "@typespec/http": "catalog:default",
+    "@types/node": "catalog:default",
+    "typescript": "catalog:default",
+    "vitest": "catalog:default"
+  },
+  "files": [
+    "dist/**",
+    "!dist/test/**"
+  ]
+}

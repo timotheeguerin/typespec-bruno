@@ -1,0 +1,57 @@
+{
+  "name": "typespec-opencollection",
+  "version": "0.1.0",
+  "description": "TypeSpec emitter that generates OpenCollection API collections",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "tspMain": "dist/src/index.js",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "pnpm build",
+    "sample:emit": "tsp compile sample"
+  },
+  "keywords": [
+    "typespec",
+    "typespec-emitter",
+    "opencollection",
+    "bruno",
+    "api",
+    "rest"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@alloy-js/core": "catalog:default",
+    "@typespec/compiler": "catalog:default",
+    "@typespec/emitter-framework": "catalog:default",
+    "@typespec/http": "catalog:default",
+    "@typespec/openapi": "catalog:default"
+  },
+  "devDependencies": {
+    "@alloy-js/core": "catalog:default",
+    "@types/node": "catalog:default",
+    "@typespec/compiler": "catalog:default",
+    "@typespec/emitter-framework": "catalog:default",
+    "@typespec/http": "catalog:default",
+    "@typespec/openapi": "catalog:default",
+    "typescript": "catalog:default",
+    "vitest": "catalog:default"
+  },
+  "dependencies": {
+    "typespec-random-sample": "workspace:*",
+    "yaml": "^2.8.2"
+  },
+  "files": [
+    "dist/**",
+    "!dist/test/**"
+  ]
+}

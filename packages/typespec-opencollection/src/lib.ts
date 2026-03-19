@@ -1,11 +1,11 @@
 import { createTypeSpecLibrary, type JSONSchemaType } from "@typespec/compiler";
 
-export interface BrunoEmitterOptions {
+export interface OpenCollectionEmitterOptions {
   /** Preserve user-edited param, header, and body values from existing files. Default: true. */
   "preserve-values"?: boolean;
 }
 
-const EmitterOptionsSchema: JSONSchemaType<BrunoEmitterOptions> = {
+const EmitterOptionsSchema: JSONSchemaType<OpenCollectionEmitterOptions> = {
   type: "object",
   additionalProperties: false,
   properties: {
@@ -20,7 +20,7 @@ const EmitterOptionsSchema: JSONSchemaType<BrunoEmitterOptions> = {
 };
 
 export const $lib = createTypeSpecLibrary({
-  name: "typespec-bruno",
+  name: "typespec-opencollection",
   diagnostics: {},
   emitter: {
     options: EmitterOptionsSchema,

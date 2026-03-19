@@ -1,18 +1,19 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { createBrunoTestRunner } from "./test-host.js";
+import { createTestRunner } from "./test-host.js";
 import type { BasicTestRunner } from "@typespec/compiler/testing";
 import { ignoreDiagnostics } from "@typespec/compiler";
 import { getAllHttpServices, getServers } from "@typespec/http";
-import { convertPath, kebabCase, generateExampleValue } from "../src/utils.js";
+import { convertPath, kebabCase } from "../src/utils.js";
+import { generateSample } from "typespec-random-sample";
 
 describe("emitter integration", () => {
   let runner: BasicTestRunner;
 
   beforeAll(async () => {
-    runner = await createBrunoTestRunner();
+    runner = await createTestRunner();
   });
 
-  it("converts URI templates to Bruno paths", () => {
+  it("converts URI templates to OpenCollection paths", () => {
     expect(convertPath("/pets")).toBe("/pets");
     expect(convertPath("/pets/{petId}")).toBe("/pets/:petId");
     expect(convertPath("/users/{userId}/pets/{petId}")).toBe("/users/:userId/pets/:petId");
@@ -59,8 +60,14 @@ describe("emitter integration", () => {
     `);
     const httpServices = ignoreDiagnostics(getAllHttpServices(runner.program));
     const op = httpServices[0].operations[0];
-    const example = generateExampleValue(op.parameters.body!.type);
-    expect(example).toEqual({ name: "string", age: 0, ok: false });
+    const example = generateSample(op.parameters.body!.type) as Record<string, unknown>;
+    expect(typeof example.name).toBe("string");
+    expect(typeof example.age).toBe("number");
+    expect(Number.isInteger(example.age)).toBe(true);
+    expect(typeof example.ok).toBe("boolean");
+    // Deterministic: same call produces same result
+    const example2 = generateSample(op.parameters.body!.type);
+    expect(example).toEqual(example2);
   });
 
   it("extracts @server definitions", async () => {
@@ -97,8 +104,11 @@ describe("emitter integration", () => {
       @route("/users") @post op createUser(@body user: User): { @statusCode _: 201 };
     `);
     const httpServices = ignoreDiagnostics(getAllHttpServices(runner.program));
-    const example = generateExampleValue(httpServices[0].operations[0].parameters.body!.type);
-    expect(example).toEqual({ name: "string", address: { street: "string", city: "string" } });
+    const example = generateSample(httpServices[0].operations[0].parameters.body!.type) as Record<string, unknown>;
+    expect(typeof example.name).toBe("string");
+    const address = example.address as Record<string, unknown>;
+    expect(typeof address.street).toBe("string");
+    expect(typeof address.city).toBe("string");
   });
 
   it("uses @opExample for body payload", async () => {

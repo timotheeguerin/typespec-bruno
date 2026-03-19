@@ -1,5 +1,5 @@
 emit:
-  - "typespec-bruno"
+  - "typespec-opencollection"
 options: 
-  typespec-bruno:
+  typespec-opencollection:
     emitter-output-dir: "{project-root}/collection"

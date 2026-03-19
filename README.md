@@ -1,4 +1,4 @@
-# typespec-bruno
+# typespec-opencollection
 
 A [TypeSpec](https://typespec.io) emitter that generates [OpenCollection](https://www.opencollection.com/) YAML files — an open specification for defining executable API collections.
 
@@ -9,7 +9,7 @@ Define your API in TypeSpec, then generate a ready-to-use collection with YAML r
 ## Installation
 
 ```bash
-pnpm add typespec-bruno
+pnpm add typespec-opencollection
 ```
 
 Peer dependencies:
@@ -24,7 +24,7 @@ Add the emitter to your `tspconfig.yaml`:
 
 ```yaml
 emit:
-  - "typespec-bruno"
+  - "typespec-opencollection"
 ```
 
 Run:
@@ -36,7 +36,7 @@ tsp compile .
 This generates an OpenCollection YAML directory:
 
 ```
-tsp-output/typespec-bruno/
+tsp-output/typespec-opencollection/
 ├── opencollection.yml        # Collection root
 ├── environments/
 │   ├── production.yml        # From @server definitions

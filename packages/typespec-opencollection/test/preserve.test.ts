@@ -5,7 +5,7 @@ import { join } from "path";
 import { tmpdir } from "os";
 
 describe("extractPreservedSections", () => {
-  const testDir = join(tmpdir(), "typespec-bruno-test-" + Date.now());
+  const testDir = join(tmpdir(), "typespec-opencollection-test-" + Date.now());
 
   it("returns empty for non-existent file", async () => {
     const sections = await extractPreservedSections("/non/existent/file.yml");

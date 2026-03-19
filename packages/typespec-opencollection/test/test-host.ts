@@ -5,11 +5,11 @@ import {
 } from "@typespec/compiler/testing";
 import { HttpTestLibrary } from "@typespec/http/testing";
 import { OpenAPITestLibrary } from "@typespec/openapi/testing";
-import { BrunoTestLibrary } from "./test-lib.js";
+import { OpenCollectionTestLibrary } from "./test-lib.js";
 
-export async function createBrunoTestRunner(): Promise<BasicTestRunner> {
+export async function createTestRunner(): Promise<BasicTestRunner> {
   const host = await createTestHost({
-    libraries: [HttpTestLibrary, OpenAPITestLibrary, BrunoTestLibrary],
+    libraries: [HttpTestLibrary, OpenAPITestLibrary, OpenCollectionTestLibrary],
   });
   return createTestRunner(host);
 }

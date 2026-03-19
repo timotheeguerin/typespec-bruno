@@ -1,55 +1,8 @@
 {
-  "name": "typespec-bruno",
-  "version": "0.1.0",
-  "description": "TypeSpec emitter that generates Bruno API collections",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
-  "tspMain": "dist/src/index.js",
-  "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/src/index.d.ts",
-      "default": "./dist/src/index.js"
-    }
-  },
+  "private": true,
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "clean": "rm -rf dist",
-    "prepublishOnly": "pnpm build",
-    "sample:emit": "tsp compile sample"
-  },
-  "keywords": [
-    "typespec",
-    "emitter",
-    "bruno",
-    "api",
-    "rest"
-  ],
-  "license": "MIT",
-  "peerDependencies": {
-    "@alloy-js/core": ">=0.22.0",
-    "@typespec/compiler": ">=1.0.0",
-    "@typespec/emitter-framework": ">=0.17.0",
-    "@typespec/http": ">=1.0.0",
-    "@typespec/openapi": ">=1.0.0"
-  },
-  "devDependencies": {
-    "@alloy-js/core": "^0.22.0",
-    "@types/node": "^25.5.0",
-    "@typespec/compiler": "^1.10.0",
-    "@typespec/emitter-framework": "^0.17.0",
-    "@typespec/http": "^1.10.0",
-    "@typespec/openapi": "^1.10.0",
-    "typescript": "~5.8.2",
-    "vitest": "^3.0.0"
-  },
-  "files": [
-    "dist/**",
-    "!dist/test/**"
-  ],
-  "dependencies": {
-    "yaml": "^2.8.2"
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "clean": "pnpm -r clean"
   }
 }
