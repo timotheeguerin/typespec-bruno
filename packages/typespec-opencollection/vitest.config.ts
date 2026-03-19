@@ -8,5 +8,6 @@ export default defineConfig({
   test: {
     include: ["test/**/*.test.{ts,tsx}"],
     testTimeout: 30000,
+    hookTimeout: 30000,
   },
 });

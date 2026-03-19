@@ -87,6 +87,21 @@ importers:
         specifier: catalog:default
         version: 3.2.4(@types/node@25.5.0)(yaml@2.8.2)
 
+  sample:
+    dependencies:
+      '@typespec/compiler':
+        specifier: catalog:default
+        version: 1.10.0(@types/node@25.5.0)
+      '@typespec/http':
+        specifier: catalog:default
+        version: 1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))
+      '@typespec/openapi':
+        specifier: catalog:default
+        version: 1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0))(@typespec/http@1.10.0(@typespec/compiler@1.10.0(@types/node@25.5.0)))
+      typespec-opencollection:
+        specifier: workspace:*
+        version: link:../packages/typespec-opencollection
+
 packages:
 
   '@alloy-js/core@0.22.0':

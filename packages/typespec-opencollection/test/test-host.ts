@@ -1,15 +1,10 @@
-import {
-  createTestHost,
-  createTestRunner,
-  type BasicTestRunner,
-} from "@typespec/compiler/testing";
-import { HttpTestLibrary } from "@typespec/http/testing";
-import { OpenAPITestLibrary } from "@typespec/openapi/testing";
-import { OpenCollectionTestLibrary } from "./test-lib.js";
+import { createTester, findTestPackageRoot } from "@typespec/compiler/testing";
 
-export async function createTestRunner(): Promise<BasicTestRunner> {
-  const host = await createTestHost({
-    libraries: [HttpTestLibrary, OpenAPITestLibrary, OpenCollectionTestLibrary],
-  });
-  return createTestRunner(host);
+export async function createOpenCollectionTester() {
+  const packageRoot = await findTestPackageRoot(import.meta.url);
+  return createTester(packageRoot, {
+    libraries: ["@typespec/http", "@typespec/openapi"],
+  })
+    .importLibraries()
+    .using("TypeSpec.Http");
 }

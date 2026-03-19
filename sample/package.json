@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "name": "sample",
+  "dependencies": {
+    "@typespec/compiler": "catalog:default",
+    "@typespec/http": "catalog:default",
+    "@typespec/openapi": "catalog:default",
+    "typespec-opencollection": "workspace:*"
+  }
+}
