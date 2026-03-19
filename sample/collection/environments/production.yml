@@ -1,5 +1,4 @@
-info:
-  name: Production
-  type: env
-vars:
-  baseUrl: https://petstore.example.com
+name: Production
+variables:
+  - name: baseUrl
+    value: https://petstore.example.com

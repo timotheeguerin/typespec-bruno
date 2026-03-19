@@ -91,11 +91,14 @@ export interface OpenCollectionRoot {
 
 /** Environment file */
 export interface OpenCollectionEnvironment {
-  info: {
-    name: string;
-    type: "env";
-  };
-  vars: Record<string, string>;
+  name: string;
+  variables: EnvironmentVariable[];
+}
+
+export interface EnvironmentVariable {
+  name: string;
+  value: string;
+  disabled?: boolean;
 }
 
 /** A request file with its relative path inside the collection. */

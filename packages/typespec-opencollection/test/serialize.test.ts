@@ -20,17 +20,20 @@ describe("serializeRoot", () => {
 });
 
 describe("serializeEnvironment", () => {
-  it("produces environment with vars", () => {
+  it("produces environment with variables", () => {
     const env: OpenCollectionEnvironment = {
-      info: { name: "Production", type: "env" },
-      vars: { baseUrl: "https://api.example.com", apiKey: "secret" },
+      name: "Production",
+      variables: [
+        { name: "baseUrl", value: "https://api.example.com" },
+        { name: "apiKey", value: "secret" },
+      ],
     };
     const yaml = serializeEnvironment(env);
     const parsed = parse(yaml);
-    expect(parsed.info.name).toBe("Production");
-    expect(parsed.info.type).toBe("env");
-    expect(parsed.vars.baseUrl).toBe("https://api.example.com");
-    expect(parsed.vars.apiKey).toBe("secret");
+    expect(parsed.name).toBe("Production");
+    expect(parsed.variables).toHaveLength(2);
+    expect(parsed.variables[0]).toEqual({ name: "baseUrl", value: "https://api.example.com" });
+    expect(parsed.variables[1]).toEqual({ name: "apiKey", value: "secret" });
   });
 });
 

@@ -40,7 +40,7 @@ tsp-output/typespec-opencollection/
 ├── opencollection.yml        # Collection root
 ├── environments/
 │   ├── production.yml        # From @server definitions
-│   └── local-development.yml
+│   └── development.yml
 ├── Pets/
 │   ├── list.yml
 │   ├── create.yml

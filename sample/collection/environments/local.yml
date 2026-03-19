@@ -1,5 +1,4 @@
-info:
-  name: Local
-  type: env
-vars:
-  baseUrl: http://localhost:3000
+name: Local
+variables:
+  - name: baseUrl
+    value: http://localhost:3000
